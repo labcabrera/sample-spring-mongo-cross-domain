@@ -7,19 +7,44 @@ las entidades están en diferentes bases de datos.
 
 En nuestro ejemplo el modelo es muy sencillo:
 
-[options="header",cols="2,2,2,3"]
+[options="header"]
 |===
 |Entidad       |Nombre        |Database              |Descripcion
-|Productos     |`Product`     |_sample-mongo-shared_ |Representa un producto.
-|Acuerdo marco |`Agreement`   |_sample-mongo-shared_ |Cada uno de los acuerdos marcos asociados a un producto.
-|Persona       |`Person`      |_sample-mongo-api_    |Representa una persona.
-|Contrato      |`Contract`    |_sample-mongo-api_    |Representa un contrato asociado a un producto. El contrato estará asociado a
+|Productos     |`Product`     |_mongo-sample-shared_ |Representa un producto.
+|Acuerdo marco |`Agreement`   |_mongo-sample-shared_ |Cada uno de los acuerdos marcos asociados a un producto.
+|Persona       |`Person`      |_mongo-sample-app_    |Representa una persona.
+|Contrato      |`Contract`    |_mongo-sample-app_    |Representa un contrato asociado a un producto. El contrato estará asociado a
                                                       una persona como tomador (holder), y a una lista de personas como
                                                       beneficiarios (recipients).
 |===
 
-En este modelo vemos que tanto los productos como los acuerdos marco están definidos en una base de datos diferente
-a la que utilizamos por nuestra API.
+En este modelo vemos que tanto los productos como acuerdos *están definidos en una base de datos diferente*
+a la que utilizamos por nuestra API:
+
+[source]
+----
+> db.adminCommand({listDatabases:1, nameOnly:true})
+{
+        "databases" : [
+                {
+                        "name" : "admin"
+                },
+                {
+                        "name" : "config"
+                },
+                {
+                        "name" : "local"
+                },
+                {
+                        "name" : "mongo-sample-app"
+                },
+                {
+                        "name" : "mongo-sample-shared"
+                }
+        ],
+        "ok" : 1
+}
+----
 
 Mongo permite establecer referencias a bases de datos externas utilizando
 https://docs.mongodb.com/manual/reference/database-references/#dbrefs[DBRefs].
@@ -31,6 +56,18 @@ Esto está implementado por la anotación de Spring:
   @DBRef(db = "mongo-sample-shared")
   private Agreement agreement;
 ----
+
+Al realizar la consulta desde la consola de mongo vemos que el objeto DBRef tiene asociado el nombre de la base de datos que contiene el
+documento asociado:
+
+----
+> db.contracts.find('5c014aec27b0492c989168a0')
+{ "_id" : ObjectId("5c014aec27b0492c989168a0"), "contractNumber" : "100000000001", "agreement" : DBRef("agreements", "10001", "mongo-sample-shared"), "holder" : DBRef("persons", ObjectId("5c0143a327b0493fd4a190ba")), "recipients" : [ DBRef("persons", ObjectId("5c0143a327b0493fd4a190ba")) ], "_class" : "org.lab.samples.mongo.api.model.Contract" }
+>
+----
+
+
+== Estructura del ejemplo
 
 En nuestro ejemplo tenemos tres proyectos:
 
