@@ -62,9 +62,12 @@ documento asociado:
 
 ----
 > db.contracts.find('5c014aec27b0492c989168a0')
-{ "_id" : ObjectId("5c014aec27b0492c989168a0"), "contractNumber" : "100000000001",
-"agreement" : DBRef("agreements", "10001", "mongo-sample-shared"), "holder" : DBRef("persons", ObjectId("5c0143a327b0493fd4a190ba")),
-"recipients" : [ DBRef("persons", ObjectId("5c0143a327b0493fd4a190ba")) ], "_class" : "org.lab.samples.mongo.api.model.Contract" }
+{ "_id" : ObjectId("5c014aec27b0492c989168a0"),
+"contractNumber" : "100000000001",
+"agreement" : DBRef("agreements", "10001", "mongo-sample-shared"),
+"holder" : DBRef("persons", ObjectId("5c0143a327b0493fd4a190ba")),
+"recipients" : [ DBRef("persons", ObjectId("5c0143a327b0493fd4a190ba")) ],
+"_class" : "org.lab.samples.mongo.api.model.Contract" }
 >
 ----
 
