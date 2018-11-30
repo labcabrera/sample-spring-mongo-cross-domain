@@ -1,0 +1,16 @@
+spring:
+  data:
+    mongodb:
+      database: mongo-sample-app
+      host: localhost
+      port: 27017
+
+logging:
+  level:
+    root: info
+    org.lab: debug
+
+
+app:
+  mongo-shared:
+    database: mongo-sample-shared

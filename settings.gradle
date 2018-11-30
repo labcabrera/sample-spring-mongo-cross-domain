@@ -1,0 +1,5 @@
+rootProject.name = 'sample-spring-mongo-cross-domain'
+
+include ":sample-shared-model",
+        ":sample-api-model",
+        ":sample-api"

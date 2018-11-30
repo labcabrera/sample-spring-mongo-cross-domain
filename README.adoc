@@ -1,0 +1,64 @@
+= Sample using multiple databases with Spring Data MongoDB
+
+== Introducción
+
+Es repositorio es un ejemplo de como utilizar Spring Data Mongo en un modelo compartido en el que
+las entidades están en diferentes bases de datos.
+
+En nuestro ejemplo el modelo es muy sencillo:
+
+[options="header",cols="1,1,2"]
+|===
+|Entidad       |Nombre        |Database              |Descripcion
+|Productos     |`Product`     |_sample-mongo-shared  |Representa un producto.
+|Acuerdo marco |`Agreement`   |_sample-mongo-shared  |Cada uno de los acuerdos marcos asociados a un producto.
+|Persona       |`Person`      |_sample-mongo-api     |Representa una persona.
+|Contrato      |`Contract`    |_sample-mongo-api     |Representa un contrato asociado a un producto. El contrato estará asociado a
+                                                      una persona como tomador (holder), y a una lista de personas como
+                                                      beneficiarios (recipients).
+|===
+
+En este modelo vemos que tanto los productos como los acuerdos marco están definidos en una base de datos diferente
+a la que utilizamos por nuestra API.
+
+Mongo permite establecer referencias a bases de datos externas utilizando
+https://docs.mongodb.com/manual/reference/database-references/#dbrefs[DBRefs].
+
+Esto está implementado por la anotación de Spring:
+
+[source,java]
+----
+  @DBRef(db = "mongo-sample-shared")
+  private Agreement agreement;
+----
+
+En nuestro ejemplo tenemos tres proyectos:
+
+* *sample-shared-model*: definición del modelo que sería compartido por diferentes aplicaciones.
+* *sample-api-model*: definición del modelo específico de nuestra aplicación.
+* *sample-api*: API de ejemplo que utilizaremos para probar las expresiones de consulta a nuestro modelo utilizando RSQL.
+
+Realizaremos los ejemplos a través de los siguientes accesos:
+
+* Utilizando _MongoTemplate_.
+* Utilizando _MongoRepository_.
+* Utilizando el objeto _Predicate_ de http://www.querydsl.com/[QueryDSL].
+
+== Ejecutando el ejemplo
+
+En primer lugar necesitaremos una base de datos de mongo. La opción más cómoda es hacerlo vía docker:
+
+----
+docker run --name sample-mongo -p 27017:27017 -d mongo:4
+----
+
+*TODO*: continuar con el ejemplo
+
+////
+
+db.contracts.find({contractNumber:"100000000001"})
+db.contracts.find({'agreement.$id':"10001"})
+
+db.contracts.find({'agreement.product.$id':"100"})
+
+////
