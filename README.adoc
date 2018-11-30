@@ -7,13 +7,13 @@ las entidades están en diferentes bases de datos.
 
 En nuestro ejemplo el modelo es muy sencillo:
 
-[options="header",cols="1,1,2"]
+[options="header",cols="2,2,2,3"]
 |===
 |Entidad       |Nombre        |Database              |Descripcion
-|Productos     |`Product`     |_sample-mongo-shared  |Representa un producto.
-|Acuerdo marco |`Agreement`   |_sample-mongo-shared  |Cada uno de los acuerdos marcos asociados a un producto.
-|Persona       |`Person`      |_sample-mongo-api     |Representa una persona.
-|Contrato      |`Contract`    |_sample-mongo-api     |Representa un contrato asociado a un producto. El contrato estará asociado a
+|Productos     |`Product`     |_sample-mongo-shared_ |Representa un producto.
+|Acuerdo marco |`Agreement`   |_sample-mongo-shared_ |Cada uno de los acuerdos marcos asociados a un producto.
+|Persona       |`Person`      |_sample-mongo-api_    |Representa una persona.
+|Contrato      |`Contract`    |_sample-mongo-api_    |Representa un contrato asociado a un producto. El contrato estará asociado a
                                                       una persona como tomador (holder), y a una lista de personas como
                                                       beneficiarios (recipients).
 |===
@@ -40,9 +40,9 @@ En nuestro ejemplo tenemos tres proyectos:
 
 Realizaremos los ejemplos a través de los siguientes accesos:
 
-* Utilizando _MongoTemplate_.
-* Utilizando _MongoRepository_.
-* Utilizando el objeto _Predicate_ de http://www.querydsl.com/[QueryDSL].
+* Utilizando `MongoTemplate`.
+* Utilizando `MongoRepository`.
+* Utilizando el objeto `Predicate` de http://www.querydsl.com/[QueryDSL].
 
 == Ejecutando el ejemplo
 
@@ -51,6 +51,9 @@ En primer lugar necesitaremos una base de datos de mongo. La opción más cómod
 ----
 docker run --name sample-mongo -p 27017:27017 -d mongo:4
 ----
+
+A continuación ejecutaremos la aplicación. A través de http://localhost:8080 accederemos al panel de Swagger donde podremos
+realizar las diferentes consultas. 
 
 *TODO*: continuar con el ejemplo
 
