@@ -3,9 +3,8 @@ package org.lab.samples.mongo.api.controller;
 import java.util.Optional;
 
 import org.lab.samples.mongo.api.model.Person;
-import org.lab.samples.mongo.api.repositories.PersonRepository;
 import org.lab.samples.mongo.api.resources.PersonResource;
-import org.lab.samples.mongo.api.rsql.PredicateParser;
+import org.lab.samples.mongo.api.service.PersonSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,11 +16,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.querydsl.core.types.Predicate;
-
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 @RequestMapping(value = "/persons", produces = "application/hal+json")
@@ -29,26 +32,31 @@ import io.swagger.annotations.Api;
 public class PersonController {
 
 	@Autowired
-	private PersonRepository repository;
+	private PersonSearchService service;
 
 	@Autowired
 	private PagedResourcesAssembler<Person> pagedAssembler;
 
-	@Autowired
-	private PredicateParser predicateParser;
-
 	@GetMapping("/{id}")
+	@ApiOperation(value = "Person search by id")
 	public ResponseEntity<PersonResource> findById(@PathVariable String id) {
-		Optional<Person> contract = repository.findById(id);
+		Optional<Person> contract = service.findById(id);
 		Optional<PersonResource> resource = contract.isPresent() ? Optional.of(new PersonResource(contract.get())) : Optional.empty();
 		return ResponseEntity.of(resource);
 	}
 
 	@GetMapping
-	public ResponseEntity<PagedResources<PersonResource>> find(String search, @PageableDefault(sort = "code") Pageable pageable) {
+	@ApiOperation(value = "Person search")
+	//@formatter:off
+	@ApiImplicitParams({
+		@ApiImplicitParam(name = "page", value = "Page number", required = false, dataType = "string", paramType = "query", defaultValue = "0"),
+		@ApiImplicitParam(name = "size", value = "Page size", required = false, dataType = "string", paramType = "query", defaultValue = "10"),
+		@ApiImplicitParam(name = "sort", value = "Sort expression", required = false, dataType = "string", paramType = "query", example = "surname,asc") })
+	public ResponseEntity<PagedResources<PersonResource>> find(
+			@ApiParam(value = "Search expression", required = false) @RequestParam(name = "search", required = false, defaultValue = "") String search,
+			@ApiIgnore @PageableDefault(sort = "surname,name") Pageable pageable) { //@formatter:on
 		pageable = pageable != null ? pageable : PageRequest.of(0, 10);
-		Optional<Predicate> predicate = predicateParser.buildPredicate(search, PersonRepository.PATH_MAP);
-		Page<Person> page = predicate.isPresent() ? repository.findAll(predicate.get(), pageable) : repository.findAll(pageable);
+		Page<Person> page = service.findAll(search, pageable);
 		PagedResources<PersonResource> pr = pagedAssembler.toResource(page, (e) -> new PersonResource(e));
 		return ResponseEntity.ok(pr);
 	}

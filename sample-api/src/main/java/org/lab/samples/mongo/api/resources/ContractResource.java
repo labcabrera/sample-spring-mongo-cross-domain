@@ -7,9 +7,11 @@ import org.lab.samples.mongo.api.controller.AgreementController;
 import org.lab.samples.mongo.api.controller.ContractController;
 import org.lab.samples.mongo.api.model.Contract;
 import org.springframework.hateoas.ResourceSupport;
+import org.springframework.hateoas.core.Relation;
 
 import lombok.Getter;
 
+@Relation(collectionRelation = "contracts")
 public class ContractResource extends ResourceSupport {
 
 	@Getter
