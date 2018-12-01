@@ -56,9 +56,10 @@ project(':sample-api-model') {
 	apply plugin: "com.ewerk.gradle.plugins.querydsl"
 	dependencies {
 		compile(project(':sample-shared-model'))
-		compile("com.github.vineey:rsql-querydsl-all:${rsqlQuerydslVersion}")
 		compile('org.springframework.boot:spring-boot-starter-data-mongodb')
 		compile('org.springframework.boot:spring-boot-starter-validation')
+		compile('org.springframework.boot:spring-boot-starter-json')
+		compile("com.github.vineey:rsql-querydsl-all:${rsqlQuerydslVersion}")
 		compile('org.projectlombok:lombok')
 	}
 	querydsl {

@@ -1,19 +1,24 @@
 package org.lab.samples.mongo.api.populator;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.hibernate.validator.internal.util.Contracts;
 import org.lab.samples.mongo.api.model.Contract;
+import org.lab.samples.mongo.api.model.IdCard;
 import org.lab.samples.mongo.api.model.Person;
 import org.lab.samples.mongo.shared.model.Agreement;
+import org.lab.samples.mongo.shared.model.Country;
 import org.lab.samples.mongo.shared.model.Product;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import com.mongodb.MongoClient;
 
@@ -34,6 +39,9 @@ public class PopulatorService {
 	}
 
 	public void check() {
+		if (sharedMongoTemplate.count(new Query(), Country.class) == 0) {
+			populateCountries();
+		}
 		if (sharedMongoTemplate.count(new Query(), Product.class) == 0) {
 			populateProducts();
 		}
@@ -46,6 +54,18 @@ public class PopulatorService {
 		if (mongoTemplate.count(new Query(), Contracts.class) == 0) {
 			populateContracts();
 		}
+	}
+
+	private void populateCountries() {
+		log.info("Loading countries");
+		List<String> countries = new ArrayList<>();
+		countries.add("ESP|Spain");
+		countries.add("ITA|Italy");
+		countries.add("FRA|France");
+		countries.stream().map(e -> {
+			String[] split = e.split("\\|");
+			return new Country(split[0], split[1]);
+		}).forEach(p -> sharedMongoTemplate.save(p));
 	}
 
 	private void populateProducts() {
@@ -71,28 +91,34 @@ public class PopulatorService {
 	}
 
 	private void populatePersons() {
+		log.info("Loading persons");
 		List<String> persons = new ArrayList<>();
-		persons.add("John|Doe|70111222A");
-		persons.add("Alice|Smith|70333000B");
-		persons.add("Bob|Kundera|70555111C");
+		persons.add("John|Doe|70111222A|1971-05-25|ESP|ESP");
+		persons.add("Alice|Smith|70333000B|1980-08-30|FRA|ESP,FRA");
+		persons.add("Bob|Kundera|70555111C|1963-04-11|ITA|ITA");
 		persons.stream().map(e -> {
 			String[] split = e.split("\\|");
+			List<String> nationalities = Arrays.asList(split[5].split(","));
 			Person person = new Person();
 			person.setName(split[0]);
 			person.setSurname(split[1]);
-			person.setIdCardNumber(split[2]);
+			person.setIdCard(new IdCard(split[2]));
+			person.setBirthDate(LocalDate.parse(split[3]));
+			person.setBirthCountry(new Country(split[4]));
+			person.setNationalities(nationalities.stream().map(c -> new Country(c)).collect(Collectors.toList()));
 			return person;
 		}).forEach(p -> mongoTemplate.save(p));
 	}
 
 	private void populateContracts() {
+		log.info("Loading contracts");
 		List<String> contracts = new ArrayList<>();
 		contracts.add("10001|100000000001|70111222A|70111222A");
 		contracts.add("10001|100000000002|70111222A|70111222A");
 		contracts.add("10001|100000000003|70111222A|70111222A");
 		contracts.add("10001|100000000004|70111222A|70111222A");
 		contracts.add("10001|100000000005|70111222A|70111222A,70555111C");
-		contracts.add("10002|100000000006|70333000B|70333000B,70333000B");
+		contracts.add("10002|100000000006|70333000B|70333000B,70111222A");
 		contracts.add("10002|100000000007|70333000B|70333000B");
 		contracts.add("10002|100000000008|70333000B|70333000B");
 		contracts.add("20001|100000000009|70333000B|70333000B");
@@ -115,8 +141,9 @@ public class PopulatorService {
 
 	private Person findByIdCardNumber(String idCard) {
 		Query query = new Query();
-		query.addCriteria(Criteria.where("idCardNumber").is(idCard));
+		query.addCriteria(Criteria.where("idCard.number").is(idCard));
 		Person person = mongoTemplate.findOne(query, Person.class);
+		Assert.notNull(person, "Unknow person with id card number " + idCard);
 		return person;
 	}
 

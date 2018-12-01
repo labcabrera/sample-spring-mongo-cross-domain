@@ -18,6 +18,9 @@ public interface PersonRepository extends MongoRepository<Person, String>, Query
 		.put("id", QPerson.person.id)
 		.put("name", QPerson.person.name)
 		.put("surname", QPerson.person.surname)
+		.put("idCard.number", QPerson.person.idCard.number)
+		.put("birthDate", QPerson.person.birthDate)
+		.put("birthCountry.id", QPerson.person.birthCountry.id)
 		.build(); //@formatter:on
 
 	Optional<Person> findByIdCardNumber(String idCardNumber);
