@@ -128,8 +128,11 @@ En nuestro ejemplo tenemos tres proyectos:
 
 == Utilizando QueryDSL
 
-INFO: tanto en _master_ como en _develop_ no está incluido QueryDSL. Los ejemplos están en el branch
+[NOTE]
+====
+Tanto en _master_ como en _develop_ no está incluido QueryDSL. Los ejemplos están en el branch
 _querydsl_ del repositorio.
+====
 
 QueryDSL es una buena librería de cara a tener un modelo agnóstico, nos permite abstraernos del
 modelo de persistencia y podríamos tener funcionando las mismas entidades utilizando Mongo o JPA.
@@ -183,8 +186,6 @@ dependencias incorrectamente, algo que luego requeriría no propagarlas de forma
 los proyectos que utilizasen nuestro modelo.
 ====
 
-*TODO*: comentar adicionalmente problema con los scopes del plugin de gradle.
-
 == Uilizando REST Query Engine
 
 Dado que no podemos utilizar QueryDSL otra alternativa que tenemos para seguir utilizando RSQL para
@@ -219,9 +220,103 @@ Contract(id=5c0265c2faea554cb78ec927, contractNumber=100000000004, agreement=Agr
 Contract(id=5c0265c2faea554cb78ec928, contractNumber=100000000005, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
 ----
 
+Utilizando el objeto _Query_ perdemos la capacidad de emplear _MongoRepository_, y por lo tanto
+también la de trabajar directamente con _PagingAndSortingRepository_. Por esta razón nuestra capa de
+servicios estaría acoplada a MongoDB y ya no podríamos por ejemplo utilizar JPA (posibilidad que nos
+ofrece el uso de _repositories_ al ser independientes de la implementación).
+
+Para poder trabajar con `Optional` y + `Page` deberemos definir un servicio que genere estos objetos
+a partir de nuestro `MongoTemplate`:
+
+[source,java]
+----
+public abstract class RsqlSearchService<E> {
+
+  private final Class<E> entityClass;
+
+  @Autowired
+  private MongoTemplate mongoTemplate;
+
+  protected RsqlSearchService(Class<E> entityClass) {
+    this.entityClass = entityClass;
+  }
+
+  public Optional<E> findById(String id) {
+    return Optional.ofNullable(mongoTemplate.findById(id, entityClass));
+  }
+
+  public Page<E> findAll(Pageable pageable) {
+    return findAll(null, pageable);
+  }
+
+  public Page<E> findAll(String search, Pageable pageable) {
+    Query query;
+    if (StringUtils.isNotBlank(search)) {
+      QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
+      Condition<GeneralQueryBuilder> condition = pipeline.apply(search, entityClass);
+      Criteria criteria = condition.query(new MongoVisitor());
+      query = new Query(criteria);
+    }
+    else {
+      query = new Query();
+    }
+    long count = mongoTemplate.count(query, entityClass);
+    query.with(pageable);
+    List<E> results = mongoTemplate.find(query, entityClass);
+    return new PageImpl<E>(results, pageable, count);
+  }
+}
+----
+
+=== Extendiendo tipos no soportados (LocalDate y LocalDateTime)
+
+La librería por defecto no soporta las conversiones a _LocalDate_ o _LocalDateTime_. Para ello
+debemos implementar los conversores de Spring. Tenemos por ejemplo:
+
+[source,java]
+----
+public class StringToLocalDateConverter implements Converter<String, LocalDate> {
+
+  @Override
+  public LocalDate convert(String source) {
+    return LocalDate.parse(source);
+  }
+}
+----
+
+Después registraremos esta clase en un `StringToTypeConverter` de la librería y generarenos el
+objeto `QueryConversionPipeline` del modo siguiente:
+
+[source,java]
+----
+  QueryConversionPipeline pipeline = QueryConversionPipeline.builder()
+    .useNonDefaultArgumentConversionPipe(DefaultArgumentConversionPipe.builder()
+    .useNonDefaultStringToTypeConverter(new CustomSpringConversionServiceConverter()).build())
+    .build();
+----
+
+Una vez realizado ya podremos hacer búsquedas como la siguiente:
+
+[source,java]
+----
+  @Test
+  public void testSearchBefore() {
+    get("/persons?search=birthDate=lt=1980-01-01")
+    .then()
+    .assertThat().statusCode(200).and()
+    .assertThat().body("_embedded", Matchers.notNullValue())
+    .assertThat().body("page.size", Matchers.is(10))
+    .assertThat().body("page.totalElements", Matchers.is(2));
+  }
+----
+
 == API de búsqueda utilizando atributos de un DBRef diferentes al identificador
 
-*TODO* explicar el sistema utilizado
+*TODO*: por hacer
+
+== Definiendo varios MongoTemplate utilizando Spring Boot
+
+*TODO*: por hacer
 
 == Ejecutando el ejemplo
 
