@@ -88,6 +88,7 @@ project('sample-api') {
 		implementation("io.springfox:springfox-swagger-ui:${springfoxSwaggerVersion}")
 		compileOnly('org.projectlombok:lombok')
 		testImplementation('org.springframework.boot:spring-boot-starter-test')
+		testImplementation('io.rest-assured:rest-assured:3.2.0')
 	}
 }
 

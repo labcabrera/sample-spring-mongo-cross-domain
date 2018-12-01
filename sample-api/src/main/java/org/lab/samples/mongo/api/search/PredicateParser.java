@@ -1,4 +1,4 @@
-package org.lab.samples.mongo.api.rsql;
+package org.lab.samples.mongo.api.search;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

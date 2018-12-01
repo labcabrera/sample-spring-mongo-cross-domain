@@ -17,7 +17,7 @@ public interface ContractRepository extends MongoRepository<Contract, String>, Q
 	Map<String, Path> PATH_MAP = ImmutableMap.<String, Path>builder() //@formatter:off
 		.put("id", QContract.contract.id)
 		.put("contractNumber", QContract.contract.contractNumber)
-		//.put("agreement", QContract.contract.agreement)
+		.put("holder.id", QContract.contract.holder.id)
 		.put("agreement.id", QContract.contract.agreement.id)
 		.build(); //@formatter:on
 
