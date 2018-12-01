@@ -35,4 +35,5 @@ public class SearchContractByRecipientTest {
 		System.out.println("Search contract by recipient:");
 		results.forEach(e -> System.out.println(e.toString()));
 	}
+
 }

@@ -17,6 +17,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
+import com.github.rutledgepaulv.qbuilders.conditions.Condition;
+import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
+import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
 import com.querydsl.core.types.Predicate;
 
 @RunWith(SpringRunner.class)
@@ -46,6 +50,18 @@ public class SearchContractByAgreementTest {
 		Page<Contract> page = repository.findAll(predicate, PageRequest.of(0, 10));
 		System.out.println("Contract search by agreement using Predicate results:");
 		page.getContent().forEach(e -> System.out.println(e));
+	}
+
+	@Test
+	public void findUsingRSQL() {
+		QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
+		String rsql = "agreement.id==10001";
+		Condition<GeneralQueryBuilder> condition = pipeline.apply(rsql, Contract.class);
+		Criteria query = condition.query(new MongoVisitor());
+		List<Contract> results = mongoOperations.find(new Query(query), Contract.class);
+		Assert.assertFalse(results.isEmpty());
+		System.out.println("Contract search by agreement using RSQL results:");
+		results.forEach(e -> System.out.println(e));
 	}
 
 }

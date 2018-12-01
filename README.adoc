@@ -4,13 +4,21 @@
 
 == Introducción
 
-Es repositorio es un ejemplo de como utilizar Spring Data Mongo en un modelo compartido en el que
-las entidades están en diferentes bases de datos.
+El objetivo de este ejemplo es mostrar las capacidades que nos ofrece Spring para trabajar con un
+modelo que utiliza diferentes bases de datos.
 
-Este repositorio está relacionado con el ejemplo de {sample-ddd-extension}[extensión de un modelo compartido]
-utilizando MongoDB realizado anteriormente.
+En esta guía se analizan las diferentes modalidades de acceso a Mongo:
 
-En nuestro ejemplo el modelo es muy sencillo:
+* Utilizando `MongoTemplate`.
+* Utilizando `MongoRepository`.
+* Utilizando el objeto `Predicate` de http://www.querydsl.com/[QueryDSL].
+* Convirtiendo RSQL a un `Predicate` de QueryDSL a través de la librería _com.github.vineey:rsql-querydsl-all_.
+* Convirtiendo RSQL a un `Criteria` de Spring Mongo a través de la librería _com.github.rutledgepaulv:rest-query-engine_
+
+Anticipándonos a los resultados las pruebas realizadas indican que *la librería _rsql-querydsl-all_
+tiene limitaciones al utilizar modelos distribuídos*, mientras que los resultados utilizando
+_rest-query-engine_ han sido correctos.
+
 
 [options="header",cols="1,1,2,3"]
 |===
@@ -19,6 +27,7 @@ En nuestro ejemplo el modelo es muy sencillo:
                                                       diferentes acuerdos marco.
 |Acuerdo marco |`Agreement`   |_mongo-sample-shared_ |Cada uno de los acuerdos marcos asociados a un
                                                       producto.
+|País          |`Country`     |_mongo_sample-shared_ |País.
 |Persona       |`Person`      |_mongo-sample-app_    |Representa una persona relacionada con un
                                                       contrato.
 |Contrato      |`Contract`    |_mongo-sample-app_    |Representa un contrato asociado a un producto.
@@ -79,6 +88,34 @@ de la base de datos que contiene el documento asociado:
 >
 ----
 
+Spring es capaz de resolver el documento externo. Esto podemos verlo funcionando a través del siguiente ejemplo:
+
+[source,java]
+----
+    @Test
+    public void findUsingQuery() {
+        Query query = new Query(Criteria.where("agreement.id").is("10001"));
+        List<Contract> results = mongoOperations.find(query, Contract.class);
+        System.out.println("Contract search by agreement using Query results:");
+        results.forEach(e -> System.out.println(e));
+        Assert.assertFalse(results.isEmpty());
+    }
+----
+
+[source]
+----
+Contract search by agreement using Query results:
+Contract(id=5c0265c2faea554cb78ec924, contractNumber=100000000001, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ... 
+Contract(id=5c0265c2faea554cb78ec925, contractNumber=100000000002, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec926, contractNumber=100000000003, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec927, contractNumber=100000000004, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec928, contractNumber=100000000005, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+----
+
+Vemos que resuelve correctamente el acuerdo y sus propiedades aunque no es capaz de obtener el
+producto, aunque podríamos obtenerlo haciendo una consulta al acuerdo marco a través de un
+`MongoTemplate` que apunte a la base de datos compartida.
+
 
 == Estructura del ejemplo
 
@@ -89,11 +126,87 @@ En nuestro ejemplo tenemos tres proyectos:
 * *sample-api*: API de ejemplo que utilizaremos para probar las expresiones de consulta a nuestro
   modelo utilizando RSQL.
 
-Realizaremos los ejemplos a través de los siguientes accesos:
+== Utilizando QueryDSL
 
-* Utilizando `MongoTemplate`.
-* Utilizando `MongoRepository`.
-* Utilizando el objeto `Predicate` de http://www.querydsl.com/[QueryDSL].
+QueryDSL es una buena librería de cara a tener un modelo agnóstico, nos permite abstraernos del
+modelo de persistencia y podríamos tener funcionando las mismas entidades utilizando Mongo o JPA.
+
+Spring nos provee de la interface `QuerydslPredicateExecutor` que nos permite operar con el objeto
+`Predicate` de QueryDSL.
+
+De cara a la exposición de los servicios también tenemos la librería _rsql-querydsl-all_ que nos
+permite convertir una expresión de búsqueda RSQL a un objeto `Predicate`.
+
+Hasta aquí todo bien, pero en la práctica la conversión de RSQL a Predicate cuando trabajamos con
+_DBRefs_ tiene limitaciones.
+
+Un ejemplo sencillo es el siguiente:
+
+[source,java]
+----
+  public void findUsingPredicate() {
+    Predicate predicate = QContract.contract.agreement.id.eq("10001");
+    Page<Contract> page = repository.findAll(predicate, PageRequest.of(0, 10));
+    System.out.println("Contract search by agreement using Predicate results:");
+    page.getContent().forEach(e -> System.out.println(e));
+  }
+----
+
+El predicate que obtenemos es _contract.agreement.id = 10001_ que posteriormente se resuelve como:
+
+----
+find using query: { "agreement" : { "$ref" : "agreements" , "$id" : "10001"} }
+----
+
+Vemos que aunque detecta la relación, no detecta que el dbref hace referencia a una base de datos
+diferente. La consulta correcta es:
+
+----
+find using query: { "agreement" : { "$ref" : "agreements" , "$id" : "10001" , "$db" : "mongo-sample-shared"} }
+----
+
+Por esta razón *no podremos utilizar QueryDSL* para realizar consultas a un modelo de Mongo
+compuesto por diferentes esquemas.
+
+*TODO*: comentar adicionalmente problema con los scopes del plugin de gradle.
+
+== Uilizando REST Query Engine
+
+Dado que no podemos utilizar QueryDSL otra alternativa que tenemos para seguir utilizando RSQL para
+la exposición de nuestra API es la librería _rest-query-engine_.
+
+Esta trabaja a través de la API de Spring, utilizando el objeto _org.springframework.data.mongodb.core.query.Criteria_
+del siguiente modo:
+
+----
+  @Test
+  public void findUsingRSQL() {
+    QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
+    String rsql = "agreement.id==10001";
+    Condition<GeneralQueryBuilder> condition = pipeline.apply(rsql, Contract.class);
+    Criteria query = condition.query(new MongoVisitor());
+    List<Contract> results = mongoOperations.find(new Query(query), Contract.class);
+    Assert.assertFalse(results.isEmpty());
+    System.out.println("Contract search by agreement using RSQL results:");
+    results.forEach(e -> System.out.println(e));
+  }
+----
+
+Si ejecutamos este test veremos que la query que se ejecuta es la correcta y este fragmento de
+código produce la siguiente salida:
+
+----
+Contract search by agreement using RSQL results:
+Contract(id=5c0265c2faea554cb78ec924, contractNumber=100000000001, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec925, contractNumber=100000000002, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec926, contractNumber=100000000003, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec927, contractNumber=100000000004, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+Contract(id=5c0265c2faea554cb78ec928, contractNumber=100000000005, agreement=Agreement(id=10001, name=Agreement 10001, product=null), ...
+----
+
+== API de búsqueda utilizando atributos de un DBRef diferentes al identificador
+
+*TODO* explicar el sistema utilizado
 
 == Ejecutando el ejemplo
 
