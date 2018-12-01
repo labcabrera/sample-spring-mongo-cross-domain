@@ -51,7 +51,7 @@ public class QContract extends EntityPathBase<Contract> {
     public QContract(Class<? extends Contract> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
         this.agreement = inits.isInitialized("agreement") ? new org.lab.samples.mongo.shared.model.QAgreement(forProperty("agreement"), inits.get("agreement")) : null;
-        this.holder = inits.isInitialized("holder") ? new QPerson(forProperty("holder")) : null;
+        this.holder = inits.isInitialized("holder") ? new QPerson(forProperty("holder"), inits.get("holder")) : null;
     }
 
 }

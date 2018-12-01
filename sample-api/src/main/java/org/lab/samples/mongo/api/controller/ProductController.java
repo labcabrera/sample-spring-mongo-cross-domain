@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mongodb.MongoClient;
 
+import io.swagger.annotations.Api;
+
 @RestController
 @RequestMapping(value = "/products", produces = "application/hal+json")
+@Api(tags = "Products")
 public class ProductController {
 
 	private MongoTemplate sharedMongoTemplate;
