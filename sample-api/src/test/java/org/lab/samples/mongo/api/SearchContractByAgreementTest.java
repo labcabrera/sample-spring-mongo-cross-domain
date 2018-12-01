@@ -2,6 +2,7 @@ package org.lab.samples.mongo.api;
 
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.lab.samples.mongo.api.model.Contract;
@@ -20,7 +21,7 @@ import com.querydsl.core.types.Predicate;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SearchByAgreementTests {
+public class SearchContractByAgreementTest {
 
 	@Autowired
 	private ContractRepository repository;
@@ -30,20 +31,21 @@ public class SearchByAgreementTests {
 
 	// La busqueda por id de un documento existente en otra base de datos funciona
 	@Test
-	public void findUsingQueryExternalDatabase() {
+	public void findUsingQuery() {
 		Query query = new Query(Criteria.where("agreement.id").is("10001"));
 		List<Contract> results = mongoOperations.find(query, Contract.class);
-		System.out.println("Query results: " + results);
+		System.out.println("Contract search by agreement using Query results:");
+		results.forEach(e -> System.out.println(e));
+		Assert.assertFalse(results.isEmpty());
 	}
 
 	// No funciona con las busquedas en otras bases de datos utilizando predicate
 	@Test
-	public void findUsingPredicateExternalDatabase() {
+	public void findUsingPredicate() {
 		Predicate predicate = QContract.contract.agreement.id.eq("10001");
 		Page<Contract> page = repository.findAll(predicate, PageRequest.of(0, 10));
-
-		System.out.println("Count: " + page.getTotalElements());
-		System.out.println("Predicate results: " + page.getContent());
+		System.out.println("Contract search by agreement using Predicate results:");
+		page.getContent().forEach(e -> System.out.println(e));
 	}
 
 }
