@@ -128,6 +128,9 @@ En nuestro ejemplo tenemos tres proyectos:
 
 == Utilizando QueryDSL
 
+INFO: tanto en _master_ como en _develop_ no está incluido QueryDSL. Los ejemplos están en el branch
+_querydsl_ del repositorio.
+
 QueryDSL es una buena librería de cara a tener un modelo agnóstico, nos permite abstraernos del
 modelo de persistencia y podríamos tener funcionando las mismas entidades utilizando Mongo o JPA.
 
@@ -167,6 +170,18 @@ find using query: { "agreement" : { "$ref" : "agreements" , "$id" : "10001" , "$
 
 Por esta razón *no podremos utilizar QueryDSL* para realizar consultas a un modelo de Mongo
 compuesto por diferentes esquemas.
+
+
+[NOTE]
+====
+Aunque el que no funcione parece condición necesaria para no utilizar QueryDSL, también esto nos
+ahorra un problema con el plugin de gradle a la hora de establecer las dependencias del proyecto.
+El plugin _com.ewerk.gradle.plugins.querydsl_ (al menos en su versión 1.0.10) requiere que todas las
+dependencias estén a nivel _compile_, incluídas también las que sólo deberían utilizarse para laç
+compilación como por ejemplo _lombok_. Preescindiendo del plugin evitamos tener que declarar estas
+dependencias incorrectamente, algo que luego requeriría no propagarlas de forma transitiva a todos
+los proyectos que utilizasen nuestro modelo.
+====
 
 *TODO*: comentar adicionalmente problema con los scopes del plugin de gradle.
 

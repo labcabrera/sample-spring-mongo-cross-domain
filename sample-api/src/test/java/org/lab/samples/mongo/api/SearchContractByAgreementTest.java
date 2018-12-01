@@ -6,12 +6,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.lab.samples.mongo.api.model.Contract;
-import org.lab.samples.mongo.api.model.QContract;
-import org.lab.samples.mongo.api.repositories.ContractRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -21,19 +17,14 @@ import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
 import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
-import com.querydsl.core.types.Predicate;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class SearchContractByAgreementTest {
 
 	@Autowired
-	private ContractRepository repository;
-
-	@Autowired
 	private MongoOperations mongoOperations;
 
-	// La busqueda por id de un documento existente en otra base de datos funciona
 	@Test
 	public void findUsingQuery() {
 		Query query = new Query(Criteria.where("agreement.id").is("10001"));
@@ -43,15 +34,6 @@ public class SearchContractByAgreementTest {
 		Assert.assertFalse(results.isEmpty());
 	}
 
-	// No funciona con las busquedas en otras bases de datos utilizando predicate
-	@Test
-	public void findUsingPredicate() {
-		Predicate predicate = QContract.contract.agreement.id.eq("10001");
-		Page<Contract> page = repository.findAll(predicate, PageRequest.of(0, 10));
-		System.out.println("Contract search by agreement using Predicate results:");
-		page.getContent().forEach(e -> System.out.println(e));
-	}
-
 	@Test
 	public void findUsingRSQL() {
 		QueryConversionPipeline pipeline = QueryConversionPipeline.defaultPipeline();
@@ -59,9 +41,9 @@ public class SearchContractByAgreementTest {
 		Condition<GeneralQueryBuilder> condition = pipeline.apply(rsql, Contract.class);
 		Criteria query = condition.query(new MongoVisitor());
 		List<Contract> results = mongoOperations.find(new Query(query), Contract.class);
-		Assert.assertFalse(results.isEmpty());
 		System.out.println("Contract search by agreement using RSQL results:");
 		results.forEach(e -> System.out.println(e));
+		Assert.assertFalse(results.isEmpty());
 	}
 
 }

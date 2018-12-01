@@ -30,10 +30,9 @@ public class SearchContractByRecipientTest {
 		Person person = personRepository.findByIdCardNumber("70111222A").get();
 		Query query = new Query(Criteria.where("recipients.id").is(person.getId()));
 		List<Contract> results = mongoOperations.find(query, Contract.class);
-		Assert.assertFalse(results.isEmpty());
-
-		System.out.println("Search contract by recipient:");
+		System.out.println("Search contract by recipient using Query:");
 		results.forEach(e -> System.out.println(e.toString()));
+		Assert.assertFalse(results.isEmpty());
 	}
 
 }

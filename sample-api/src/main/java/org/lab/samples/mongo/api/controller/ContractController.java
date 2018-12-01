@@ -5,9 +5,7 @@ import static org.springframework.web.servlet.mvc.method.annotation.MvcUriCompon
 import java.util.Optional;
 
 import org.lab.samples.mongo.api.model.Contract;
-import org.lab.samples.mongo.api.repositories.ContractRepository;
 import org.lab.samples.mongo.api.resources.ContractResource;
-import org.lab.samples.mongo.api.search.PredicateParser;
 import org.lab.samples.mongo.api.service.ContractSearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,8 +21,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.querydsl.core.types.Predicate;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -43,9 +39,6 @@ public class ContractController {
 
 	@Autowired
 	private PagedResourcesAssembler<Contract> pagedAssembler;
-
-	@Autowired
-	private PredicateParser predicateParser;
 
 	@GetMapping("/{id}")
 	@ApiOperation(value = "Contract search by id")
@@ -66,8 +59,7 @@ public class ContractController {
 			@ApiParam(value = "Search expression", required = false) @RequestParam(name = "search", required = false, defaultValue = "") String search,
 			@ApiIgnore @PageableDefault(sort = "code") Pageable pageable) { //@formatter:on
 		pageable = pageable != null ? pageable : PageRequest.of(0, 10);
-		Optional<Predicate> predicate = predicateParser.buildPredicate(search, ContractRepository.PATH_MAP);
-		Page<Contract> page = predicate.isPresent() ? service.findAll(predicate.get(), pageable) : service.findAll(pageable);
+		Page<Contract> page = service.findAll(search, pageable);
 		PagedResources<ContractResource> pr = pagedAssembler.toResource(page, (e) -> new ContractResource(e));
 		pr.add(new Link(fromController(ProductController.class).build().toString(), "contracts"));
 		return ResponseEntity.ok(pr);

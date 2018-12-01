@@ -8,13 +8,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.lab.samples.mongo.api.ApiApplication;
+import org.lab.samples.mongo.api.model.Contract;
 import org.lab.samples.mongo.api.model.Person;
-import org.lab.samples.mongo.api.model.QContract;
 import org.lab.samples.mongo.api.repositories.ContractRepository;
 import org.lab.samples.mongo.api.repositories.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -28,6 +31,9 @@ public class RestClientContractTest {
 
 	@Autowired
 	private PersonRepository personRepository;
+
+	@Autowired
+	private MongoTemplate mongoTemplate;
 
 	@Before
 	public void before() {
@@ -61,14 +67,14 @@ public class RestClientContractTest {
 	@Test
 	public void testSearchByHolderId() {
 		Person person = personRepository.findByIdCardNumber("70111222A").get();
-		Long contractCount = contractRepository.count(QContract.contract.holder.id.eq(person.getId()));
+		long contractCount = mongoTemplate.count(new Query(Criteria.where("holder.id").is(person.getId())), Contract.class);
 		//@formatter:off
 		get("/contracts?search=holder.id==" + person.getId())
 		.then()
 		.assertThat().statusCode(200).and()
 		.assertThat().body("_embedded", Matchers.notNullValue())
 		.assertThat().body("page.size", Matchers.is(10))
-		.assertThat().body("page.totalElements", Matchers.is(contractCount));
+		.assertThat().body("page.totalElements", Matchers.is((int)contractCount));
 		//@formatter:on
 	}
 
