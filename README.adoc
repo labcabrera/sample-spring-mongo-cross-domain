@@ -1,25 +1,33 @@
-= Sample using multiple databases with Spring Data MongoDB
+= Using multiple databases with Spring Data MongoDB
+
+:sample-ddd-extension: https://github.com/labcabrera/sample-spring-mongo-ddd-extension
 
 == Introducción
 
 Es repositorio es un ejemplo de como utilizar Spring Data Mongo en un modelo compartido en el que
 las entidades están en diferentes bases de datos.
 
+Este repositorio está relacionado con el ejemplo de {sample-ddd-extension}[extensión de un modelo compartido]
+utilizando MongoDB realizado anteriormente.
+
 En nuestro ejemplo el modelo es muy sencillo:
 
-[options="header"]
+[options="header",cols="1,1,2,3"]
 |===
 |Entidad       |Nombre        |Database              |Descripcion
-|Productos     |`Product`     |_mongo-sample-shared_ |Representa un producto.
-|Acuerdo marco |`Agreement`   |_mongo-sample-shared_ |Cada uno de los acuerdos marcos asociados a un producto.
-|Persona       |`Person`      |_mongo-sample-app_    |Representa una persona.
-|Contrato      |`Contract`    |_mongo-sample-app_    |Representa un contrato asociado a un producto. El contrato estará asociado a
-                                                      una persona como tomador (holder), y a una lista de personas como
-                                                      beneficiarios (recipients).
+|Productos     |`Product`     |_mongo-sample-shared_ |Representa un producto que tiene asociados
+                                                      diferentes acuerdos marco.
+|Acuerdo marco |`Agreement`   |_mongo-sample-shared_ |Cada uno de los acuerdos marcos asociados a un
+                                                      producto.
+|Persona       |`Person`      |_mongo-sample-app_    |Representa una persona relacionada con un
+                                                      contrato.
+|Contrato      |`Contract`    |_mongo-sample-app_    |Representa un contrato asociado a un producto.
+                                                      El contrato tendrá un único tomador (holder) y
+                                                      una lista de beneficiarios (recipients).
 |===
 
-En este modelo vemos que tanto los productos como acuerdos *están definidos en una base de datos diferente*
-a la que utilizamos por nuestra API:
+En este modelo vemos que tanto los productos como acuerdos *están definidos en una base de datos
+diferente* a la que utilizamos por nuestra API:
 
 [source]
 ----
@@ -57,8 +65,8 @@ Esto está implementado por la anotación de Spring:
   private Agreement agreement;
 ----
 
-Al realizar la consulta desde la consola de mongo vemos que el objeto DBRef tiene asociado el nombre de la base de datos que contiene el
-documento asociado:
+Al realizar la consulta desde la consola de mongo vemos que el objeto DBRef tiene asociado el nombre
+de la base de datos que contiene el documento asociado:
 
 ----
 > db.contracts.find('5c014aec27b0492c989168a0')
@@ -78,7 +86,8 @@ En nuestro ejemplo tenemos tres proyectos:
 
 * *sample-shared-model*: definición del modelo que sería compartido por diferentes aplicaciones.
 * *sample-api-model*: definición del modelo específico de nuestra aplicación.
-* *sample-api*: API de ejemplo que utilizaremos para probar las expresiones de consulta a nuestro modelo utilizando RSQL.
+* *sample-api*: API de ejemplo que utilizaremos para probar las expresiones de consulta a nuestro
+  modelo utilizando RSQL.
 
 Realizaremos los ejemplos a través de los siguientes accesos:
 
