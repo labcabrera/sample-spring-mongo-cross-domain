@@ -12,12 +12,12 @@ En esta guía se analizan las diferentes modalidades de acceso a Mongo:
 * Utilizando `MongoTemplate`.
 * Utilizando `MongoRepository`.
 * Utilizando el objeto `Predicate` de http://www.querydsl.com/[QueryDSL].
-* Convirtiendo RSQL a un `Predicate` de QueryDSL a través de la librería _com.github.vineey:rsql-querydsl-all_.
-* Convirtiendo RSQL a un `Criteria` de Spring Mongo a través de la librería _com.github.rutledgepaulv:rest-query-engine_
+* Convirtiendo RSQL a un `Predicate` de QueryDSL a través de la librería https://github.com/vineey/archelix-rsql[com.github.vineey:rsql-querydsl-all].
+* Convirtiendo RSQL a un `Criteria` de Spring Mongo a través de la librería https://github.com/RutledgePaulV/rest-query-engine[com.github.rutledgepaulv:rest-query-engine].
 
-Anticipándonos a los resultados las pruebas realizadas indican que *la librería _rsql-querydsl-all_
+Anticipándonos a los resultados, las pruebas realizadas indican que *la librería _rsql-querydsl-all_
 tiene limitaciones al utilizar modelos distribuídos*, mientras que los resultados utilizando
-_rest-query-engine_ han sido correctos.
+_rest-query-engine_ han sido los esperados.
 
 
 [options="header",cols="1,1,2,3"]
@@ -194,6 +194,7 @@ la exposición de nuestra API es la librería _rest-query-engine_.
 Esta trabaja a través de la API de Spring, utilizando el objeto _org.springframework.data.mongodb.core.query.Criteria_
 del siguiente modo:
 
+[source,java]
 ----
   @Test
   public void findUsingRSQL() {
@@ -225,8 +226,8 @@ también la de trabajar directamente con _PagingAndSortingRepository_. Por esta 
 servicios estaría acoplada a MongoDB y ya no podríamos por ejemplo utilizar JPA (posibilidad que nos
 ofrece el uso de _repositories_ al ser independientes de la implementación).
 
-Para poder trabajar con `Optional` y + `Page` deberemos definir un servicio que genere estos objetos
-a partir de nuestro `MongoTemplate`:
+Al no obtener directamente los objetos `Optional` y `Page` que nos proporcionan los _repositories_
+de Spring, deberemos definir un servicio que genere estos objetos a partir de nuestro `MongoTemplate`:
 
 [source,java]
 ----
@@ -312,11 +313,70 @@ Una vez realizado ya podremos hacer búsquedas como la siguiente:
 
 == API de búsqueda utilizando atributos de un DBRef diferentes al identificador
 
-*TODO*: por hacer
+Dado que MongoDB no permite hacer joins al estilo de JPA, si queremos por ejemplo buscar las polizas
+asociadas a un cliente a partir de su número de documento de identidad en lugar del _id_ deberemos
+primero obtener el identificador del cliente:
+
+[source,java]
+----
+  public Page<Contract> findByCustomerIdCard(String search, String idCardNumber, Pageable pageable) {
+    Query query = new Query();
+
+    if (StringUtils.isNotBlank(search)) {
+      Condition<GeneralQueryBuilder> condition = pipeline.apply(search, entityClass);
+      Criteria criteria = condition.query(new MongoVisitor());
+      query.addCriteria(criteria);
+    }
+
+    if (StringUtils.isNotEmpty(idCardNumber)) {
+      Optional<Person> optionalPerson = personService.findByIdCardNumber(idCardNumber);
+      if (optionalPerson.isPresent()) {
+        String personId = optionalPerson.get().getId();
+        Criteria criteria = Criteria.where("holder.id").is(personId).orOperator(Criteria.where("recipients.id").is(personId));
+        query.addCriteria(criteria);
+      }
+    }
+----
 
 == Definiendo varios MongoTemplate utilizando Spring Boot
 
-*TODO*: por hacer
+Para poder trabajar con varios `MongoTemplate` en primer lugar deberemos deshabilitar la
+auto-configuración:
+
+[source,yml]
+----
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+----
+
+Después simplemente crearemos dos beans del modo siguiente:
+
+[source,java]
+----
+  @Primary
+  @Bean(name = "appMongoTemplate")
+  public MongoTemplate primaryMongoTemplate() throws Exception {
+    return new MongoTemplate(primaryFactory(this.mongoProperties.getApp()));
+  }
+
+  @Bean(name = "sharedMongoTemplate")
+  public MongoTemplate secondaryMongoTemplate() throws Exception {
+    return new MongoTemplate(secondaryFactory(this.mongoProperties.getShared()));
+  }
+----
+
+Finalmente podremos inyectar en nuestros servicios el template que necesitemos:
+
+[source,java]
+----
+  @Autowired
+  private MongoTemplate mongoTemplate;
+
+  @Autowired
+  @Qualifier("sharedMongoTemplate")
+  private MongoTemplate sharedMongoTemplate;
+----
 
 == Ejecutando el ejemplo
 
@@ -326,16 +386,5 @@ En primer lugar necesitaremos una base de datos de mongo. La opción más cómod
 docker run --name sample-mongo -p 27017:27017 -d mongo:4
 ----
 
-A continuación ejecutaremos la aplicación. A través de http://localhost:8080 accederemos al panel de Swagger donde podremos
-realizar las diferentes consultas. 
-
-*TODO*: continuar con el ejemplo
-
-////
-
-db.contracts.find({contractNumber:"100000000001"})
-db.contracts.find({'agreement.$id':"10001"})
-
-db.contracts.find({'agreement.product.$id':"100"})
-
-////
+A continuación ejecutaremos la aplicación. A través de http://localhost:8080 accederemos al panel de
+Swagger donde podremos realizar las diferentes consultas. 

@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.lab.samples.mongo.api.model.Contract;
 import org.lab.samples.mongo.api.resources.ContractResource;
-import org.lab.samples.mongo.api.service.ContractSearchService;
+import org.lab.samples.mongo.api.service.ContractService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,7 +35,7 @@ import springfox.documentation.annotations.ApiIgnore;
 public class ContractController {
 
 	@Autowired
-	private ContractSearchService service;
+	private ContractService service;
 
 	@Autowired
 	private PagedResourcesAssembler<Contract> pagedAssembler;

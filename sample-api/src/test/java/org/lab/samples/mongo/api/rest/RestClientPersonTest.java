@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.lab.samples.mongo.api.ApiApplication;
 import org.lab.samples.mongo.api.model.Person;
-import org.lab.samples.mongo.api.repositories.PersonRepository;
+import org.lab.samples.mongo.api.service.PersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -22,11 +22,11 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class RestClientPersonTest {
 
 	@Autowired
-	private PersonRepository personRepository;
+	private PersonService personRepository;
 
 	@Before
 	public void before() {
-		Assume.assumeTrue(personRepository.count() == 3L);
+		Assume.assumeTrue(personRepository.count() == 4L);
 	}
 
 	@Test
@@ -37,7 +37,7 @@ public class RestClientPersonTest {
 		.assertThat().statusCode(200)
 		.assertThat().body("_embedded", Matchers.notNullValue())
 		.assertThat().body("page.size", Matchers.is(10))
-		.assertThat().body("page.totalElements", Matchers.is(3));
+		.assertThat().body("page.totalElements", Matchers.is(4));
 		//@formatter:on
 	}
 
@@ -84,16 +84,27 @@ public class RestClientPersonTest {
 		//@formatter:on
 	}
 
-	// TODO No funciona
 	@Test
-	public void testSearchBefore() {
+	public void testSearchLocalDate() {
 		//@formatter:off
 		get("/persons?search=birthDate=lt=1980-01-01")
 		.then()
 		.assertThat().statusCode(200).and()
 		.assertThat().body("_embedded", Matchers.notNullValue())
 		.assertThat().body("page.size", Matchers.is(10))
-		.assertThat().body("page.totalElements", Matchers.is(2));
+		.assertThat().body("page.totalElements", Matchers.is(3));
+		//@formatter:on
+	}
+
+	@Test
+	public void testSearchLocalDateTime() {
+		//@formatter:off
+		get("/persons?search=created=gt=2018-04-01T10:00:00.000")
+		.then()
+		.assertThat().statusCode(200).and()
+		.assertThat().body("_embedded", Matchers.notNullValue())
+		.assertThat().body("page.size", Matchers.is(10))
+		.assertThat().body("page.totalElements", Matchers.is(3));
 		//@formatter:on
 	}
 }

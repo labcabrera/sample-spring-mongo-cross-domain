@@ -1,6 +1,7 @@
 package org.lab.samples.mongo.api.populator;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,13 +15,12 @@ import org.lab.samples.mongo.shared.model.Agreement;
 import org.lab.samples.mongo.shared.model.Country;
 import org.lab.samples.mongo.shared.model.Product;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
-
-import com.mongodb.MongoClient;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,12 +31,9 @@ public class PopulatorService {
 	@Autowired
 	private MongoTemplate mongoTemplate;
 
+	@Autowired
+	@Qualifier("sharedMongoTemplate")
 	private MongoTemplate sharedMongoTemplate;
-
-	public PopulatorService() {
-		MongoClient mongoClient = new MongoClient("localhost");
-		sharedMongoTemplate = new MongoTemplate(mongoClient, "mongo-sample-shared");
-	}
 
 	public void check() {
 		if (sharedMongoTemplate.count(new Query(), Country.class) == 0) {
@@ -93,9 +90,10 @@ public class PopulatorService {
 	private void populatePersons() {
 		log.info("Loading persons");
 		List<String> persons = new ArrayList<>();
-		persons.add("John|Doe|70111222A|1971-05-25|ESP|ESP");
-		persons.add("Alice|Smith|70333000B|1980-08-30|FRA|ESP,FRA");
-		persons.add("Bob|Kundera|70555111C|1963-04-11|ITA|ITA");
+		persons.add("John|Doe|70111222A|1971-05-25|ESP|ESP|2018-03-03T12:50:16.204");
+		persons.add("Alice|Smith|70333000B|1980-08-30|FRA|ESP,FRA|2018-04-04T12:50:16.204");
+		persons.add("Bob|Kundera|70555111C|1963-04-11|ITA|ITA|2018-05-05T12:50:16.204");
+		persons.add("Jack|Auster|70666888D|1971-03-11|ESP|ESP|2018-06-06T12:50:16.204");
 		persons.stream().map(e -> {
 			String[] split = e.split("\\|");
 			List<String> nationalities = Arrays.asList(split[5].split(","));
@@ -106,6 +104,7 @@ public class PopulatorService {
 			person.setBirthDate(LocalDate.parse(split[3]));
 			person.setBirthCountry(new Country(split[4]));
 			person.setNationalities(nationalities.stream().map(c -> new Country(c)).collect(Collectors.toList()));
+			person.setCreated(LocalDateTime.parse(split[6]));
 			return person;
 		}).forEach(p -> mongoTemplate.save(p));
 	}
@@ -124,7 +123,7 @@ public class PopulatorService {
 		contracts.add("20001|100000000009|70333000B|70333000B");
 		contracts.add("20001|100000000010|70333000B|70333000B");
 		contracts.add("20002|100000000011|70555111C|70555111C");
-		contracts.add("30001|100000000012|70555111C|70555111C,70111222A,70333000B");
+		contracts.add("30001|100000000012|70555111C|70666888D");
 		contracts.stream().map(e -> {
 			String[] split = e.split("\\|");
 			List<String> recipients = Arrays.asList(split[3].split(","));
