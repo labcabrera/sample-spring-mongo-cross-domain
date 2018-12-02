@@ -1,5 +1,7 @@
 = Using multiple databases with Spring Data MongoDB
 
+image:https://travis-ci.org/labcabrera/sample-spring-mongo-cross-domain.svg?branch=master["Build Status", link="https://travis-ci.org/labcabrera/sample-spring-mongo-cross-domain"]
+
 :sample-ddd-extension: https://github.com/labcabrera/sample-spring-mongo-ddd-extension
 
 == Introducción
