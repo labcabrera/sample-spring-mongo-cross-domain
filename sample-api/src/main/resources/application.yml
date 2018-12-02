@@ -1,15 +1,23 @@
 spring:
-  data:
-    mongodb:
-      database: mongo-sample-app
-      host: localhost
-      port: 27017
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+
+mongodb:
+  app:
+    host: localhost
+    port: 27017
+    database: mongo-sample-app
+  shared:
+    host: localhost
+    port: 27017
+    database: mongo-sample-shared
+
+
 
 logging:
   level:
     root: info
     org.lab: debug
-
 
 app:
   mongo-shared:

@@ -1,6 +1,7 @@
 package org.lab.samples.mongo.api.model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.lab.samples.mongo.shared.model.Country;
@@ -36,4 +37,6 @@ public class Person {
 	@DBRef(db = "mongo-sample-shared")
 	@JsonIgnoreProperties("name")
 	private List<Country> nationalities;
+
+	private LocalDateTime created;
 }

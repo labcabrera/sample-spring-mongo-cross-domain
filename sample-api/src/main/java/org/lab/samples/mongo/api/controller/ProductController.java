@@ -1,15 +1,17 @@
 package org.lab.samples.mongo.api.controller;
 
-import org.lab.samples.mongo.api.model.Contract;
-import org.lab.samples.mongo.api.resources.ContractResource;
+import java.util.Optional;
+
+import org.lab.samples.mongo.api.resources.ProductResource;
+import org.lab.samples.mongo.shared.model.Product;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.mongodb.MongoClient;
 
 import io.swagger.annotations.Api;
 
@@ -18,16 +20,14 @@ import io.swagger.annotations.Api;
 @Api(tags = "Products")
 public class ProductController {
 
+	@Autowired
+	@Qualifier("sharedMongoTemplate")
 	private MongoTemplate sharedMongoTemplate;
 
-	public ProductController() {
-		MongoClient mongoClient = new MongoClient("localhost");
-		sharedMongoTemplate = new MongoTemplate(mongoClient, "mongo-sample-shared");
-	}
-
 	@GetMapping("/{id}")
-	public ResponseEntity<ContractResource> findById(@PathVariable String id) {
-		Contract contract = sharedMongoTemplate.findById(id, Contract.class);
-		return ResponseEntity.ok(new ContractResource(contract));
+	public ResponseEntity<ProductResource> findById(@PathVariable String id) {
+		Product product = sharedMongoTemplate.findById(id, Product.class);
+		Optional<ProductResource> optional = product != null ? Optional.of(new ProductResource(product)) : Optional.empty();
+		return ResponseEntity.of(optional);
 	}
 }

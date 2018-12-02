@@ -21,11 +21,11 @@ import com.github.rutledgepaulv.rqe.pipes.QueryConversionPipeline;
 
 public abstract class RsqlSearchService<E> {
 
-	private final Class<E> entityClass;
-	private final QueryConversionPipeline pipeline;
+	protected final Class<E> entityClass;
+	protected final QueryConversionPipeline pipeline;
 
 	@Autowired
-	private MongoTemplate mongoTemplate;
+	protected MongoTemplate mongoTemplate;
 
 	protected RsqlSearchService(Class<E> entityClass) {
 		this.entityClass = entityClass;
@@ -57,5 +57,9 @@ public abstract class RsqlSearchService<E> {
 		query.with(pageable);
 		List<E> results = mongoTemplate.find(query, entityClass);
 		return new PageImpl<E>(results, pageable, count);
+	}
+
+	public long count() {
+		return mongoTemplate.count(new Query(), entityClass);
 	}
 }

@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.lab.samples.mongo.api.model.Person;
 import org.lab.samples.mongo.api.resources.PersonResource;
-import org.lab.samples.mongo.api.service.PersonSearchService;
+import org.lab.samples.mongo.api.service.PersonService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +32,7 @@ import springfox.documentation.annotations.ApiIgnore;
 public class PersonController {
 
 	@Autowired
-	private PersonSearchService service;
+	private PersonService service;
 
 	@Autowired
 	private PagedResourcesAssembler<Person> pagedAssembler;
