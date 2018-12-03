@@ -6,10 +6,10 @@ image:https://travis-ci.org/labcabrera/sample-spring-mongo-cross-domain.svg?bran
 
 == Introducción
 
-El objetivo de este ejemplo es mostrar las capacidades que nos ofrece Spring para trabajar con un
-modelo que utiliza diferentes bases de datos.
+El objetivo de este ejemplo es mostrar las capacidades que nos ofrece https://spring.io/projects/spring-data-mongodb[Spring Data MongoDB]
+a la hora de trabajar con *diferentes bases de datos*.
 
-En esta guía se analizan las diferentes modalidades de acceso a Mongo:
+En esta guía se analizan las diferentes modalidades de acceso a MongoDB:
 
 * Utilizando `MongoTemplate`.
 * Utilizando `MongoRepository`.
@@ -17,10 +17,12 @@ En esta guía se analizan las diferentes modalidades de acceso a Mongo:
 * Convirtiendo RSQL a un `Predicate` de QueryDSL a través de la librería https://github.com/vineey/archelix-rsql[com.github.vineey:rsql-querydsl-all].
 * Convirtiendo RSQL a un `Criteria` de Spring Mongo a través de la librería https://github.com/RutledgePaulV/rest-query-engine[com.github.rutledgepaulv:rest-query-engine].
 
-Anticipándonos a los resultados, las pruebas realizadas indican que *la librería _rsql-querydsl-all_
-tiene limitaciones al utilizar modelos distribuídos*, mientras que los resultados utilizando
-_rest-query-engine_ han sido los esperados.
+== Resultados
 
+Como veremos posteriormente, la librería QueryDSL tiene limitaciones al utilizar modelos distribuídos.
+Los resultados utilizando la librería _rest-query-engine_ han sido los esperados.
+
+== Modelo
 
 [options="header",cols="1,1,2,3"]
 |===
