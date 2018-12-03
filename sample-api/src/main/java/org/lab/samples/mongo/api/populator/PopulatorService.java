@@ -90,21 +90,21 @@ public class PopulatorService {
 	private void populatePersons() {
 		log.info("Loading persons");
 		List<String> persons = new ArrayList<>();
-		persons.add("John|Doe|70111222A|1971-05-25|ESP|ESP|2018-03-03T12:50:16.204");
-		persons.add("Alice|Smith|70333000B|1980-08-30|FRA|ESP,FRA|2018-04-04T12:50:16.204");
-		persons.add("Bob|Kundera|70555111C|1963-04-11|ITA|ITA|2018-05-05T12:50:16.204");
-		persons.add("Jack|Auster|70666888D|1971-03-11|ESP|ESP|2018-06-06T12:50:16.204");
+		persons.add("John  |Doe    |70111222A|1971-05-25|ESP|ESP    |2018-03-03T12:50:16.204");
+		persons.add("Alice |Smith  |70333000B|1980-08-30|FRA|ESP,FRA|2018-04-04T12:50:16.204");
+		persons.add("Bob   |Kundera|70555111C|1963-04-11|ITA|ITA    |2018-05-05T12:50:16.204");
+		persons.add("Jack  |Auster |70666888D|1971-03-11|ESP|ESP    |2018-06-06T12:50:16.204");
 		persons.stream().map(e -> {
 			String[] split = e.split("\\|");
 			List<String> nationalities = Arrays.asList(split[5].split(","));
 			Person person = new Person();
-			person.setName(split[0]);
-			person.setSurname(split[1]);
-			person.setIdCard(new IdCard(split[2]));
-			person.setBirthDate(LocalDate.parse(split[3]));
-			person.setBirthCountry(new Country(split[4]));
+			person.setName(split[0].trim());
+			person.setSurname(split[1].trim());
+			person.setIdCard(new IdCard(split[2].trim()));
+			person.setBirthDate(LocalDate.parse(split[3].trim()));
+			person.setBirthCountry(new Country(split[4].trim()));
 			person.setNationalities(nationalities.stream().map(c -> new Country(c)).collect(Collectors.toList()));
-			person.setCreated(LocalDateTime.parse(split[6]));
+			person.setCreated(LocalDateTime.parse(split[6].trim()));
 			return person;
 		}).forEach(p -> mongoTemplate.save(p));
 	}

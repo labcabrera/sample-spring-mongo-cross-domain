@@ -1,13 +1,15 @@
 buildscript {
 	ext {
-		springBootVersion       = '2.1.0.RELEASE'
 		rsqlQuerydslVersion     = '2.0.0.RELEASE'
 		springfoxSwaggerVersion = '2.9.2'
+		restQueryEngineVersion  = '0.7.1'
+		restAssuredVersion      = '3.2.0'
 	}
 }
 
 plugins {
 	id 'org.springframework.boot'           version '2.1.0.RELEASE' apply false
+	id 'com.palantir.jacoco-coverage'       version '0.4.0'         apply false
 }
 
 subprojects {
@@ -15,9 +17,10 @@ subprojects {
 	apply plugin: 'java'
 	apply plugin: 'eclipse'
 	apply plugin: 'io.spring.dependency-management'
+	apply plugin: 'com.palantir.jacoco-coverage'
 	
 	group = 'org.lab.samples.mongo'
-	version = '0.4.0'
+	version = '0.5.0'
 	sourceCompatibility = 1.8
 	
 	repositories {
@@ -69,12 +72,9 @@ project('sample-api') {
 		implementation("com.github.vineey:rsql-querydsl-all:${rsqlQuerydslVersion}")
 		implementation("io.springfox:springfox-swagger2:${springfoxSwaggerVersion}")
 		implementation("io.springfox:springfox-swagger-ui:${springfoxSwaggerVersion}")
-
-		implementation('com.github.rutledgepaulv:rest-query-engine:0.7.1')
-
+		implementation("com.github.rutledgepaulv:rest-query-engine:${restQueryEngineVersion}")
 		compileOnly('org.projectlombok:lombok')
 		testImplementation('org.springframework.boot:spring-boot-starter-test')
-		testImplementation('io.rest-assured:rest-assured:3.2.0')
+		testImplementation("io.rest-assured:rest-assured:${restAssuredVersion}")
 	}
 }
-

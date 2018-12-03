@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.ObjectId;
 import org.lab.samples.mongo.api.model.Contract;
 import org.lab.samples.mongo.api.model.Person;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import com.github.rutledgepaulv.qbuilders.builders.GeneralQueryBuilder;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.github.rutledgepaulv.qbuilders.visitors.MongoVisitor;
+import com.mongodb.DBRef;
 
 @Service
 public class ContractService extends RsqlSearchService<Contract> {
@@ -41,9 +43,11 @@ public class ContractService extends RsqlSearchService<Contract> {
 			Optional<Person> optionalPerson = personService.findByIdCardNumber(idCardNumber);
 			if (optionalPerson.isPresent()) {
 				String personId = optionalPerson.get().getId();
-				// Criteria criteria =
-				// Criteria.where("holder.id").is(personId).orOperator(Criteria.where("recipients.id").is(personId));
-				Criteria criteria = Criteria.where("holder.id").is(personId);
+				// @formatter:off
+				Criteria criteria = new Criteria().orOperator(
+					Criteria.where("holder.id").is(personId),
+					Criteria.where("recipients").is(new DBRef("persons", new ObjectId(personId))));
+				// @formatter:on
 				query.addCriteria(criteria);
 			}
 		}

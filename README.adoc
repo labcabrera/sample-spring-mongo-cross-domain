@@ -6,10 +6,10 @@ image:https://travis-ci.org/labcabrera/sample-spring-mongo-cross-domain.svg?bran
 
 == Introducción
 
-El objetivo de este ejemplo es mostrar las capacidades que nos ofrece Spring para trabajar con un
-modelo que utiliza diferentes bases de datos.
+El objetivo de este ejemplo es mostrar las capacidades que nos ofrece https://spring.io/projects/spring-data-mongodb[Spring Data MongoDB]
+a la hora de trabajar con *diferentes bases de datos*.
 
-En esta guía se analizan las diferentes modalidades de acceso a Mongo:
+En esta guía se analizan las diferentes modalidades de acceso a MongoDB:
 
 * Utilizando `MongoTemplate`.
 * Utilizando `MongoRepository`.
@@ -17,10 +17,12 @@ En esta guía se analizan las diferentes modalidades de acceso a Mongo:
 * Convirtiendo RSQL a un `Predicate` de QueryDSL a través de la librería https://github.com/vineey/archelix-rsql[com.github.vineey:rsql-querydsl-all].
 * Convirtiendo RSQL a un `Criteria` de Spring Mongo a través de la librería https://github.com/RutledgePaulV/rest-query-engine[com.github.rutledgepaulv:rest-query-engine].
 
-Anticipándonos a los resultados, las pruebas realizadas indican que *la librería _rsql-querydsl-all_
-tiene limitaciones al utilizar modelos distribuídos*, mientras que los resultados utilizando
-_rest-query-engine_ han sido los esperados.
+== Resultados
 
+Como veremos posteriormente, la librería QueryDSL tiene limitaciones al utilizar modelos distribuídos.
+Los resultados utilizando la librería _rest-query-engine_ han sido los esperados.
+
+== Modelo
 
 [options="header",cols="1,1,2,3"]
 |===
@@ -317,7 +319,10 @@ Una vez realizado ya podremos hacer búsquedas como la siguiente:
 
 Dado que MongoDB no permite hacer joins al estilo de JPA, si queremos por ejemplo buscar las polizas
 asociadas a un cliente a partir de su número de documento de identidad en lugar del _id_ deberemos
-primero obtener el identificador del cliente:
+primero resolver el cliente para después componer la consulta.
+
+Por ejemplo, a la hora de hacer búsquedas por un cliente en los contratos podríamos tener un servicio
+similar al siguiente:
 
 [source,java]
 ----
@@ -334,11 +339,22 @@ primero obtener el identificador del cliente:
       Optional<Person> optionalPerson = personService.findByIdCardNumber(idCardNumber);
       if (optionalPerson.isPresent()) {
         String personId = optionalPerson.get().getId();
-        Criteria criteria = Criteria.where("holder.id").is(personId).orOperator(Criteria.where("recipients.id").is(personId));
+        Criteria criteria = new Criteria().orOperator(
+          Criteria.where("holder.id").is(personId),
+          Criteria.where("recipients").is(new DBRef("persons", new ObjectId(personId))));
         query.addCriteria(criteria);
       }
     }
+
+    long count = mongoTemplate.count(query, entityClass);
+    query.with(pageable);
+    List<Contract> results = mongoTemplate.find(query, entityClass);
+    return new PageImpl<Contract>(results, pageable, count);
+  }
 ----
+
+Vemos que en el caso de detectar que el _idCardNumber_ viene informado obtenemos el id de la persona y
+posteriormente hacemos un _or_ de la búsqueda por el campo _holder_ (many-to-one) y _recipients_ (one-to-many).
 
 == Definiendo varios MongoTemplate utilizando Spring Boot
 
@@ -356,16 +372,32 @@ Después simplemente crearemos dos beans del modo siguiente:
 
 [source,java]
 ----
-  @Primary
-  @Bean(name = "appMongoTemplate")
-  public MongoTemplate primaryMongoTemplate() throws Exception {
-    return new MongoTemplate(primaryFactory(this.mongoProperties.getApp()));
+  @ConfigurationProperties(prefix = "mongodb")
+  public class ApiMongoProperties {
+
+    private MongoProperties app = new MongoProperties();
+    private MongoProperties shared = new MongoProperties();
+
   }
 
-  @Bean(name = "sharedMongoTemplate")
-  public MongoTemplate secondaryMongoTemplate() throws Exception {
-    return new MongoTemplate(secondaryFactory(this.mongoProperties.getShared()));
-  }
+  @Configuration
+  @EnableConfigurationProperties(ApiMongoProperties.class)
+  public class MongoConfig {
+
+    @Autowired
+	  private ApiMongoProperties mongoProperties;
+
+    @Primary
+    @Bean(name = "appMongoTemplate")
+    public MongoTemplate primaryMongoTemplate() throws Exception {
+      return new MongoTemplate(primaryFactory(this.mongoProperties.getApp()));
+    }
+
+    @Bean(name = "sharedMongoTemplate")
+    public MongoTemplate secondaryMongoTemplate() throws Exception {
+      return new MongoTemplate(secondaryFactory(this.mongoProperties.getShared()));
+    }
+}
 ----
 
 Finalmente podremos inyectar en nuestros servicios el template que necesitemos:
